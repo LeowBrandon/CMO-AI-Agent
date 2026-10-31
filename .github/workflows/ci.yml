@@ -1,0 +1,32 @@
+name: MVP checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  service-tests:
+    name: Service tests (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Run isolated service tests (no API credentials)
+        run: python3 -m unittest discover -s tests -v
+      - name: Build source-only archive
+        if: matrix.python == '3.12'
+        run: python3 scripts/package.py
+      - uses: actions/upload-artifact@v4
+        if: matrix.python == '3.12'
+        with:
+          name: CMO-AI-MVP
+          path: artifacts/CMO_AI_MVP.zip
+          if-no-files-found: error
